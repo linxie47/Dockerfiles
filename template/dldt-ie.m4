@@ -13,6 +13,8 @@ ifelse(index(DOCKER_IMAGE,ubuntu),-1,,dnl
 RUN apt-get -y install libusb-1.0.0-dev
 )dnl
 
+RUN git clone https://github.com/linxie47/Sandbox.git /tmp/Sandbox
+
 RUN git clone -b ${DLDT_VER} ${DLDT_REPO} && \
     cd dldt && \
     git submodule init && \
@@ -22,9 +24,10 @@ RUN git clone -b ${DLDT_VER} ${DLDT_REPO} && \
     wget -O - ${DLDT_C_API_2} | patch -p2 && \
     wget -O - ${DLDT_C_API_3} | patch -p2 && \
     wget -O - ${DLDT_C_API_4} | patch -p2 && \
+    cp -rf /tmp/Sandbox/openvino-samples/* samples/ && \
     mkdir build && \
     cd build && \
-    cmake ifelse(index(BUILD_LINKAGE,static),-1,,-DBUILD_SHARED_LIBS=OFF) -DCMAKE_INSTALL_PREFIX=/opt/intel/dldt -DLIB_INSTALL_PATH=/opt/intel/dldt -DENABLE_MKL_DNN=ON -DENABLE_CLDNN=ifelse(index(DOCKER_IMAGE,xeon-),-1,ON,OFF) -DENABLE_SAMPLES=OFF .. && \
+    cmake ifelse(index(BUILD_LINKAGE,static),-1,,-DBUILD_SHARED_LIBS=OFF) -DCMAKE_INSTALL_PREFIX=/opt/intel/dldt -DLIB_INSTALL_PATH=/opt/intel/dldt -DENABLE_MKL_DNN=ON -DENABLE_CLDNN=ifelse(index(DOCKER_IMAGE,xeon-),-1,ON,OFF) -DENABLE_SAMPLES=ON .. && \
     make -j $(nproc) && \
     rm -rf ../bin/intel64/Release/lib/libgtest* && \
     rm -rf ../bin/intel64/Release/lib/libgmock* && \
@@ -47,6 +50,8 @@ RUN mkdir -p /opt/intel/dldt/inference-engine/include && \
 RUN mkdir -p build/opt/intel/dldt/inference-engine/include && \
     cp -r dldt/inference-engine/include/* build/opt/intel/dldt/inference-engine/include && \
     mkdir -p build${libdir} && \
+    cp -r dldt/inference-engine/bin/intel64/Release/* build${libdir} && \
+    rm -rf build${libdir}/lib && \
     cp -r dldt/inference-engine/bin/intel64/Release/lib/* build${libdir} && \
     mkdir -p build/opt/intel/dldt/inference-engine/src && \
     cp -r dldt/inference-engine/src/* build/opt/intel/dldt/inference-engine/src/ && \
